@@ -1,0 +1,16 @@
+# Local secrets and environment overrides
+.env.local
+.env.*.local
+
+# Dependencies and generated runtime data
+node_modules/
+
+# Source practice materials (keep the provided A-E folders out of Git)
+/A_매출비교/
+/B_팝업오픈/
+/C_행사준비/
+/D_화면과연결/
+/E_짧은연습/
+
+# Excel temporary lock files
+~$*.xlsx
