@@ -7,5 +7,10 @@
     { "src": "styles.css", "use": "@vercel/static" },
     { "src": "vendor/xlsx.full.min.js", "use": "@vercel/static" },
     { "src": "data/11_날씨응답_예제.json", "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/weather", "dest": "/api/weather.js" },
+    { "src": "/", "dest": "/index.html" },
+    { "handle": "filesystem" }
   ]
 }

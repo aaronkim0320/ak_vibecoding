@@ -205,7 +205,7 @@
   }
   function updateSourceStatus() {
     const target = $("#sourceStatus");
-    if (!location.search.includes("demo-data=1")) {
+    if (!allRows().length) {
       target.innerHTML = '<div class="source-chip"><strong>공개용 패키지</strong><span>매출 원본과 보고 양식은 업로드하지 않았습니다. 원본 없는 상태입니다.</span></div>';
       $("#recordCountLabel").textContent = "0 ROWS";
       const label = $("#connectionLabel");
@@ -635,8 +635,8 @@
       clearTimeout(memoTimers.get(input.dataset.recordId));
       localSave(MEMO_KEY, memos);
     });
-    $("#exportButton").addEventListener("click", exportReport);
-    $("#fileInput").addEventListener("change", (event) => handleFileUpload(event.target.files));
+    $("#exportButton")?.addEventListener("click", exportReport);
+    $("#fileInput")?.addEventListener("change", (event) => handleFileUpload(event.target.files));
     $("#criterionFilter").addEventListener("change", renderTasks);
     $("#areaFilter").addEventListener("change", renderTasks);
     $("#taskStatusFilter").addEventListener("change", renderTasks);
@@ -684,13 +684,14 @@
     $("#manageFiles").addEventListener("click", openSourceDialog);
     $("#closeDataDialog").addEventListener("click", () => $("#dataDialog").close());
     $("#dialogCloseBottom").addEventListener("click", () => $("#dataDialog").close());
-    $("#dialogUpload").addEventListener("click", () => { $("#dataDialog").close(); $("#fileInput").click(); });
+    $("#dialogUpload").hidden = true;
   }
 
   async function init() {
     setTodayLabel();
     bindEvents();
-    if (!location.search.includes("demo-data=1")) {
+    {
+      updateSourceStatus();
       $("#sales").innerHTML = '<div class="source-chip"><strong>실적 자료 미포함</strong><span>이 배포본에는 공개 가능한 가상 매출 자료가 없어 실적을 표시하지 않습니다.</span></div>';
       $("#taskBoard").textContent = "업무 원본을 제외한 공개용 배포본입니다. 행사 준비 자료는 포함하지 않았습니다.";
       $("#taskStats").innerHTML = '<div class="task-stat"><span>자료 상태</span><strong>미포함</strong></div>';
@@ -698,8 +699,6 @@
       await loadSampleWeather("공개용 배포 패키지의 교육용 예제 날씨입니다.");
       return;
     }
-    await Promise.all([loadBundledSales(), loadReportTemplate(), loadChecklist(), loadRealWeather({query:readStorage(LOCATION_KEY, {}).query || "Seoul,KR"})]);
-    renderSales();
   }
   window.OperationsTestAPI = {parseCSV, deadlineCategory, renderTasks, loadChecklist, loadRealWeather, loadSampleWeather, rainForecasts, getTasks: () => checklist};
   window.SalesTestAPI = {
