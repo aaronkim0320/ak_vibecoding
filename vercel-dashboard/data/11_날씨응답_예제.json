@@ -1,0 +1,76 @@
+{
+  "mode": "sample",
+  "status": "예제 날씨",
+  "reason": "selected-sample",
+  "message": "예제 모드를 선택했습니다.",
+  "location": {
+    "id": "seoul",
+    "name": "서울 중구 참고 좌표",
+    "note": "예제A점의 실제 위치가 아닙니다.",
+    "lat": 37.5636,
+    "lon": 126.9828,
+    "timezone": "Asia/Seoul"
+  },
+  "source": {
+    "name": "교육용 예제 · 실제 관측·예보 아님",
+    "url": null
+  },
+  "fetchedAt": "2026-10-20T03:00:00.000Z",
+  "observedAt": "2026-10-20T03:00:00.000Z",
+  "cached": false,
+  "current": {
+    "temp": 17,
+    "feelsLike": 16,
+    "humidity": 65,
+    "wind": 3.2,
+    "description": "흐림",
+    "conditionId": 804
+  },
+  "forecast": [
+    {
+      "date": "2026-10-20",
+      "min": 13,
+      "max": 18,
+      "pop": 0.2,
+      "description": "흐림",
+      "conditionId": 804,
+      "slots": 4
+    },
+    {
+      "date": "2026-10-21",
+      "min": 12,
+      "max": 17,
+      "pop": 0.7,
+      "description": "약한 비",
+      "conditionId": 500,
+      "slots": 8
+    },
+    {
+      "date": "2026-10-22",
+      "min": 11,
+      "max": 18,
+      "pop": 0.1,
+      "description": "맑음",
+      "conditionId": 800,
+      "slots": 8
+    },
+    {
+      "date": "2026-10-23",
+      "min": 12,
+      "max": 17,
+      "pop": 0.8,
+      "description": "비",
+      "conditionId": 501,
+      "slots": 8
+    },
+    {
+      "date": "2026-10-24",
+      "min": 13,
+      "max": 19,
+      "pop": 0.2,
+      "description": "구름 조금",
+      "conditionId": 801,
+      "slots": 8
+    }
+  ]
+}

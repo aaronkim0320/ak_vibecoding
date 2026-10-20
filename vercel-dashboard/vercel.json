@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "api/weather.js", "use": "@vercel/node" },
+    { "src": "index.html", "use": "@vercel/static" },
+    { "src": "app.js", "use": "@vercel/static" },
+    { "src": "styles.css", "use": "@vercel/static" },
+    { "src": "vendor/xlsx.full.min.js", "use": "@vercel/static" },
+    { "src": "data/11_날씨응답_예제.json", "use": "@vercel/static" }
+  ]
+}

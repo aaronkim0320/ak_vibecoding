@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8f5">
+  <meta name="description" content="매출 실적, 행사 준비, 날씨를 한 화면에서 살펴보는 운영 대시보드">
+  <title>운영 대시보드 · 모먼트룸</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script>
+    window.localDashboardDataReady = Promise.resolve();
+  </script>
+  <script defer src="app.js?v=9"></script>
+  <script>
+    window.addEventListener("error", (event) => {
+      const target = document.querySelector("#sourceStatus");
+      if (target) target.innerHTML = `<div class="source-chip"><strong>화면 기능 오류</strong><span class="source-error">${String(event.message || "스크립트 오류").replace(/[&<>]/g, "")}</span></div>`;
+    });
+    window.addEventListener("unhandledrejection", () => {
+      const target = document.querySelector("#sourceStatus");
+      if (target && !target.textContent) target.textContent = "자료 연결을 확인하고 있습니다.";
+    });
+  </script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#top" aria-label="운영 대시보드 홈">
+        <span class="brand-mark">M</span>
+        <span><strong>moment room</strong><small>STORE OPERATIONS</small></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <nav class="side-nav" aria-label="대시보드 메뉴">
+        <a class="nav-item active" href="#sales" data-view="sales" aria-current="page"><span class="nav-icon">▦</span>매출 현황</a>
+        <a class="nav-item" href="#operations" data-view="operations"><span class="nav-icon">✓</span>운영</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="demo-note"><span class="dot"></span><div><strong>실습용 데이터</strong><small>실제 고객·매출 정보가 아닙니다.</small></div></div>
+        <button class="sidebar-action" id="showDataSources" type="button">데이터 출처 보기 <span>↗</span></button>
+        <div class="profile"><div class="avatar">운</div><div><strong>운영 담당자</strong><small>점포 운영 워크스페이스</small></div></div>
+      </div>
+    </aside>
+    <main id="top" class="main-content">
+      <header class="topbar"><div class="breadcrumb">운영 관리 <span>/</span> 대시보드</div><div class="topbar-right"><span class="live-pill"><i></i> <span id="connectionLabel">자료 연결 확인 중</span></span><time id="todayLabel">화면을 불러오는 중…</time></div></header>
+      <div data-view-panel="sales">
+      <section id="sales" class="page-heading">
+        <div><div class="eyebrow">STORE PERFORMANCE</div><p>공개용 배포본에는 매출 원본이 포함되지 않습니다.</p></div>
+      </section>
+      <section class="filter-panel" aria-label="매출 필터">
+        <div class="filter-intro"><span class="filter-icon">≡</span><div><strong>실적 필터</strong><small id="filterSummary">전체 점포 · 전체 채널</small></div></div>
+        <div class="filter-control"><label for="storeFilter">점포</label><select id="storeFilter"><option value="all">전체 점포</option></select></div>
+        <div class="filter-control"><label for="channelFilter">채널</label><select id="channelFilter"><option value="all">전체 채널</option><option value="영업">영업</option><option value="온라인">온라인</option><option value="팝업">팝업</option></select></div>
+        <div class="filter-control"><label for="weekFilter">기준주</label><select id="weekFilter"><option value="all">전체 기간</option></select></div>
+        <div class="filter-control"><label for="brandFilter">브랜드</label><select id="brandFilter"><option value="all">전체 브랜드</option></select></div>
+        <div class="filter-control"><label for="genreFilter">장르</label><select id="genreFilter"><option value="all">전체 장르</option></select></div>
+        <button id="resetFilters" class="reset-button" type="button">초기화</button>
+      </section>
+      <section class="kpi-grid" aria-label="선택 데이터 요약">
+        <article class="kpi-card"><div class="kpi-top"><span>총 매출</span><span class="kpi-symbol mint">₩</span></div><div class="kpi-value" id="salesKpi">—</div><div class="kpi-foot"><span class="unit-label">단위: 만원</span><span id="rowsKpi">0개 기록</span></div></article>
+        <article class="kpi-card"><div class="kpi-top"><span>매출 목표</span><span class="kpi-symbol sand">◎</span></div><div class="kpi-value" id="targetKpi">—</div><div class="kpi-foot"><span class="unit-label">단위: 만원</span><span id="targetGapKpi">목표 차이 —</span></div></article>
+        <article class="kpi-card"><div class="kpi-top"><span>목표 달성률</span><span class="kpi-symbol blue">↗</span></div><div class="kpi-value" id="rateKpi">—</div><div class="kpi-foot"><span class="unit-label">합계 매출 ÷ 합계 목표</span><span id="rateCaption">—</span></div></article>
+      </section>
+      <div class="auxiliary-summary" aria-label="비용 요약"><span id="costKpi">비용 —</span><span class="summary-divider" aria-hidden="true"></span><span>비용 차감액 <strong id="netKpi">—</strong> <small>만원 · 매출 − 비용</small></span></div>
+      <section class="content-grid">
+        <article class="panel sales-panel">
+            <div class="panel-heading"><div><div class="eyebrow">STORE COMPARISON</div><h2>점포별 매출과 목표</h2><p>선택한 점포·채널·기준주·브랜드·장르의 실적을 점포별로 비교합니다.</p></div><span class="panel-menu" aria-hidden="true">•••</span></div>
+          <div class="chart-legend"><span><i class="legend-sales"></i> 매출</span><span><i class="legend-target"></i> 목표</span></div>
+          <div id="channelChart" class="channel-chart" role="img" aria-label="점포별 매출과 목표 비교"></div>
+          <div class="chart-foot"><span>합산 기준 · 단위 만원</span><span id="chartRows">0개 기록 포함</span></div>
+        </article>
+      </section>
+      <section class="panel records-panel">
+        <div class="panel-heading records-heading"><div><div class="eyebrow">RECORDS <span>·</span> <span id="recordCountLabel">0 ROWS</span></div><h2>통합 실적 데이터</h2><p>메모는 record_id별로 이 브라우저에 저장됩니다. 표 검색·페이지 이동은 보고서 범위에 영향을 주지 않습니다.</p></div><div class="record-tools"><input id="recordSearch" type="search" placeholder="브랜드 또는 기록 검색" aria-label="브랜드 또는 기록 검색"><select id="pageSize" aria-label="페이지 크기"><option value="15">15개씩 보기</option><option value="30">30개씩 보기</option><option value="50">50개씩 보기</option></select></div></div>
+        <div id="sourceStatus" class="source-status" aria-live="polite"></div>
+        <div class="table-wrap record-table-wrap"><table class="data-table record-table"><thead><tr><th>기준주</th><th>점포</th><th>브랜드</th><th>채널</th><th class="numeric">매출</th><th class="numeric">목표</th><th class="numeric">달성률</th><th class="numeric">비용 차감액</th><th>메모</th><th>출처 자료</th><th>원본 파일·행</th></tr></thead><tbody id="recordTableBody"></tbody></table></div>
+        <div class="table-bottom"><span id="recordPageLabel">—</span><div class="pagination"><button id="prevPage" type="button" aria-label="이전 페이지">←</button><span id="pageNumber">1 / 1</span><button id="nextPage" type="button" aria-label="다음 페이지">→</button></div></div>
+      </section>
+      </div>
+      <div id="operations" data-view-panel="operations" hidden>
+      <section class="panel brief-panel" aria-label="팝업 운영 브리프">
+        <div class="eyebrow">POP-UP OPERATIONS</div>
+        <h1>모먼트룸 팝업스토어 — 책상 위, 작은 숲</h1>
+        <p>2026년 10월 23일(금)~11월 1일(일) · 예제A점 5층 팝업존</p>
+        <dl class="brief-grid"><div><dt>운영 시간</dt><dd>매일 오전 10시 30분~오후 8시</dd></div><div><dt>주요 상품</dt><dd>도자기 머그, 작은 트레이, 패브릭 매트</dd></div><div><dt>구매 혜택</dt><dd>3만원 이상 구매 시 엽서 세트 1개 증정</dd></div><div><dt>혜택 조건</dt><dd>매일 선착순 30명, 1인 1회, 준비 수량 소진 시 종료</dd></div><div><dt>할인</dt><dd>별도 할인 없음</dd></div></dl>
+        <p class="operation-source">이 화면에는 가상 브리프만 표시하며 행사 준비 업무 자료는 포함하지 않습니다.</p>
+      </section>
+      <section id="tasks" class="panel tasks-panel">
+        <div class="panel-heading task-heading"><div><div class="eyebrow">EVENT CHECKLIST · 업무 자료 미포함</div><h2>행사 준비 현황</h2><p>CSV 기준일 2026-10-20 · 완료·취소 제외 · 확인 체크와 메모는 원본 상태를 바꾸지 않습니다.</p></div><div class="task-toolbar"><label class="filter-control compact"><span>점검 기준일</span><select id="criterionFilter"><option value="2026-10-20">2026.10.20 · 기본</option><option value="2026-10-22">2026.10.22 · 재점검</option></select></label><label class="filter-control compact"><span>업무 영역</span><select id="areaFilter"><option value="all">전체 업무</option></select></label><label class="filter-control compact"><span>담당 역할</span><select id="roleFilter"><option value="all">전체 담당 역할</option></select></label><label class="filter-control compact"><span>상태</span><select id="taskStatusFilter"><option value="open">미완료 전체</option><option value="미착수">미착수</option><option value="진행 중">진행 중</option><option value="검토 대기">검토 대기</option></select></label></div></div>
+        <div class="task-stats" id="taskStats"></div>
+        <div class="board-toolbar"><p>카드를 눌러 ID·마감일·확인사항을 확인하고 메모를 남기세요.</p><button id="marketingOnly" class="button button-secondary" type="button" aria-pressed="false">마케팅 담당만 보기</button></div>
+        <div id="taskBoard" class="task-board" aria-label="5개 마감 분류 준비 항목 카드 보드"></div>
+        <div class="table-wrap task-table-wrap" hidden><table class="data-table task-table"><thead><tr><th>준비 항목</th><th>업무 영역</th><th>담당 역할</th><th>마감일</th><th>진행 상태</th><th>마감 구분</th><th>우선순위</th><th>확인</th><th>운영 메모</th></tr></thead><tbody id="taskTableBody"></tbody></table></div>
+        <div class="table-bottom"><span id="taskCountLabel">0개 항목</span><span>확인 체크·메모는 task_id별로 이 브라우저에 저장됩니다.</span></div>
+      </section>
+        <article id="weather" class="panel weather-panel operations-weather">
+          <div class="panel-heading weather-heading"><div><div class="eyebrow">WEATHER &amp; EVENT</div><h2>날씨와 행사 일정</h2></div><button id="weatherModeButton" class="mode-pill" type="button">예제 날씨</button></div>
+          <div id="weatherNotice" class="weather-notice"><strong>교육용 예제</strong><span>실제 관측·예보가 아니며 예제A점의 실제 위치도 아닙니다.</span></div>
+          <div class="weather-current"><div><span id="weatherPlace" class="weather-place">서울 중구 참고 좌표</span><div id="weatherTemp" class="weather-temp">17°</div><div id="weatherDesc" class="weather-desc">흐림 · 체감 16°</div></div><div id="weatherIcon" class="weather-icon" aria-hidden="true">☁</div></div>
+          <div class="weather-meta"><span id="weatherHumidity">습도 65%</span><span id="weatherWind">바람 3.2 m/s</span><span id="weatherFetched">조회 시각 확인 중</span></div>
+          <div id="forecastList" class="forecast-list" aria-label="5일 예보"></div><p id="weatherForecastNote" class="weather-source"></p>
+          <section class="rain-preparation" aria-label="행사 기간 우천 준비"><h3>행사 기간 우천 준비</h3><p>2026.10.23~11.01 · 강수확률 60% 이상인 예보를 준비 항목에 연결합니다.</p><div id="rainAlerts" aria-live="polite"></div><p class="weather-source">우천 연결은 담당 필터와 관계없이 행사 전체의 미완료 항목을 확인합니다.</p></section>
+          <form id="weatherSearchForm" class="weather-search" hidden>
+            <label for="weatherSearch">점포 위치 검색 <span>도시명 또는 도시명,국가코드</span></label>
+            <div class="search-row"><input id="weatherSearch" type="search" placeholder="예: Seoul,KR" autocomplete="off"><button class="button button-primary" type="submit">검색</button></div>
+            <select id="weatherLocationResults" aria-label="검색 위치 선택" hidden></select>
+            <div class="weather-search-actions"><button type="button" id="loadRealWeather" class="text-button">현재·5일 날씨 조회</button><button type="button" id="loadSampleWeather" class="text-button">예제 날씨로 돌아가기</button></div>
+            <p id="weatherSearchStatus" class="weather-source" role="status">OpenWeather · 서버 /api/weather에서 조회 · 예제A점 실제 좌표는 제공되지 않았습니다.</p>
+          </form>
+          <div class="event-date"><div class="event-date-icon">◷</div><div><small>모먼트룸 팝업스토어</small><strong>10.23 — 11.01 <span>· 예제A점 5층</span></strong></div><a href="#operations" data-view="operations" aria-label="행사 준비로 이동">↗</a></div>
+        </article>
+      </div>
+      <footer class="app-footer"><span>모먼트룸 운영 대시보드</span><span>교육용 가상 자료 · 매출 단위 만원</span><button id="manageFiles" type="button">데이터 파일 관리</button></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="taskDialog" class="task-dialog" aria-labelledby="taskDialogTitle"><div class="dialog-heading"><div><div class="eyebrow">준비 항목 상세</div><h2 id="taskDialogTitle"></h2></div><button id="closeTaskDialog" type="button" class="dialog-close" aria-label="준비 항목 상세 닫기">×</button></div><div id="taskDetailBody"></div><div class="dialog-actions"><button id="taskDialogDone" type="button" class="button button-primary">확인하고 닫기</button></div></dialog>
+  <dialog id="dataDialog" class="data-dialog"><div class="dialog-heading"><div><div class="eyebrow">DATA SOURCES</div><h2>연결된 자료</h2></div><button id="closeDataDialog" class="dialog-close" type="button" aria-label="닫기">×</button></div><p class="dialog-intro">원본 실습 파일은 변경하지 않습니다. 아래 파일은 대시보드의 읽기 전용 사본입니다.</p><div id="sourceDetailList" class="source-detail-list"></div><div class="dialog-actions"><button id="dialogUpload" class="button button-secondary" type="button">실적 파일 추가</button><button id="dialogCloseBottom" class="button button-primary" type="button">닫기</button></div></dialog>
+</body>
+</html>
